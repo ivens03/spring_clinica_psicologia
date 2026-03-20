@@ -47,7 +47,10 @@ Sistema de gestão para clínica de psicologia desenvolvido com **Java 17** e **
 - **Tratamento de Exceções Global:** Concentrado em um `ControllerAdvice` para respostas de erro padronizadas.
 
 ## 8. Observabilidade e Monitoramento
-- **Logs Semânticos (Terminal/Arquivo):** Implementação de logging estruturado (ex: JSON) via `Slf4j/Logback`. Logs devem ser claros, semânticos e organizados por níveis (DEBUG, INFO, WARN, ERROR).
-- **Audit Logging em Banco de Dados:** Registro obrigatório em tabelas específicas para eventos críticos (ex: login, acesso a dados clínicos, alterações financeiras).
-- **Prontidão para Ferramental Externo (APM):** O sistema deve estar pronto para integração via `Spring Boot Actuator` e exportação de métricas (ex: Prometheus, Micrometer) e logs (ex: ELK Stack, Splunk).
+...
 - **Rastreabilidade (Tracing):** Uso de `Correlation ID` em todas as requisições para rastrear o fluxo de uma operação entre diferentes camadas e serviços.
+
+## 9. Gestão de Ambientes
+O sistema utiliza **Spring Profiles** para isolamento de configurações:
+- **Development (`dev`):** Banco de dados local `psic_dev`, logs em nível DEBUG, banner customizado.
+- **Production (`prod`):** Banco de dados de produção (configurado via variáveis de ambiente), logs em nível INFO, banner customizado, auditoria estrita.
