@@ -38,11 +38,12 @@ Este documento é a autoridade máxima de conduta para o desenvolvimento do sist
 - `agentes.md`: A "Conduta" e Padrões Éticos.
 
 **Nota:** Qualquer conflito entre os documentos deve ser resolvido priorizando o `DOCS_BUSINESS.md` para regras de negócio e o `agentes.md` para conduta ética.
-
 ## 7. Protocolo de Desenvolvimento (Fluxo Mandatório)
 Toda nova funcionalidade ou correção deve seguir rigorosamente esta ordem:
 1.  **Documentação:** Atualização dos arquivos `DOCS_*.md` para refletir as mudanças ou novas regras.
-2.  **Testes (TDD):** Escrita de testes automatizados (Unitários, de Integração e Integrados) organizados em pastas e arquivos.
+2.  **Versionamento da API:** A cada alteração de código que impacte a API, a versão no `OpenApiConfig` deve ser incrementada (ex: `.version("0.0.1")`).
+3.  **Testes (TDD):** Escrita de testes automatizados (Unitários, de Integração e Integrados) organizados em pastas e arquivos.
+...
 3.  **Validação de Testes:** Execução e garantia de sucesso total dos testes antes de iniciar a implementação final.
 4.  **Implementação:** Escrita do código seguindo a documentação e os testes.
 5.  **Feedback Técnico (Post-Mortem):** Relatório final com pontos de melhoria, lacunas identificadas e análise técnica profunda.
@@ -54,6 +55,11 @@ O projeto deve ser organizado por **Entidade (Package by Feature)** para garanti
 - `psicologia.clinica.<entidade>.repository`: Interfaces Spring Data.
 - `psicologia.clinica.<entidade>.service`: Lógica de negócio e regras de segurança.
 - `psicologia.clinica.<entidade>.controller`: Endpoints REST.
+
+**Camadas de Suporte e Infraestrutura:**
+- `psicologia.clinica.infrastructure.config.openapi`: Configurações de documentação automática.
+- `psicologia.clinica.infrastructure.config.security`: Implementação de Argon2, JWT e filtros de segurança.
+- `psicologia.clinica.exception`: Tratamento global de erros e exceções de domínio.
 
 ## 9. Excelência Técnica e Padrões de Engenharia
 - **Clean Architecture:** Manter a independência entre a lógica de negócio (Entidades/Casos de Uso) e detalhes de infraestrutura (Frameworks, DB, APIs).

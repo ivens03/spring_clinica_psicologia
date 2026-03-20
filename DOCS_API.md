@@ -8,7 +8,10 @@ Sistema de gestão para clínica de psicologia desenvolvido com **Java 17** e **
 - **Isolamento de Configuração:** Contexto visual e parâmetros de agendamento por clínica.
 - **Estrutura de Pacotes (Package by Feature):**
     - `psicologia.clinica.<entidade>.{model, dtos, repository, service, controller}`.
-    - O objetivo é manter a coesão do domínio e facilitar a manutenção.
+- **Estrutura de Infraestrutura:**
+    - `psicologia.clinica.infrastructure.config.{openapi, security}`: Configurações técnicas isoladas.
+    - `psicologia.clinica.exception`: Centralização de tratamento de erros global.
+- O objetivo é manter a coesão do domínio e facilitar a manutenção.
 
 ## 3. Segurança e Privacidade (Prioridade Máxima)
 - **Autenticação:** JWT com Refresh Tokens e 2FA obrigatório para Gestores e Profissionais.
@@ -45,6 +48,15 @@ Sistema de gestão para clínica de psicologia desenvolvido com **Java 17** e **
 - **Records do Java 17+:** Uso obrigatório para DTOs.
 - **Validação:** Uso de `Spring Validation` (`@Valid`, `@NotNull`) nos endpoints.
 - **Tratamento de Exceções Global:** Concentrado em um `ControllerAdvice` para respostas de erro padronizadas.
+
+### 7.1 Padrão de Resposta de Erro (ApiError)
+Toda resposta de erro (4xx e 5xx) deve seguir obrigatoriamente esta estrutura:
+- `timestamp`: Data e hora do ocorrido (ISO-8601).
+- `status`: Código HTTP do erro.
+- `error`: Nome curto do erro (ex: "Bad Request").
+- `message`: Mensagem amigável para o desenvolvedor/usuário.
+- `path`: URL do endpoint que originou o erro.
+- `correlationId`: ID único da requisição para rastreamento em logs (Observabilidade).
 
 ## 8. Observabilidade e Monitoramento
 ...
