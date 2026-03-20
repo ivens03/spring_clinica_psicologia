@@ -1,37 +1,36 @@
 # Guia de Padrões, Diretrizes e Conduta dos Agentes
 
-Este documento estabelece as regras de conduta, arquitetura e organização para todos os agentes envolvidos no desenvolvimento e operação do ecossistema de Gestão de Clínicas de Psicologia.
+Este documento é a autoridade máxima de conduta para o desenvolvimento do sistema. Ele consolida a ética profissional da psicologia com a engenharia de software de alta segurança.
 
 ## 1. Filosofia e Propósito Social
-- **Apoio à Formação:** O software é uma iniciativa sem fins lucrativos. Toda decisão técnica deve visar a redução de custos operacionais para as clínicas.
-- **Sustentabilidade por Rateio:** O sistema deve priorizar métricas de consumo precisas para viabilizar o modelo de divisão de custos de infraestrutura.
+- **Apoio à Formação:** O software é uma iniciativa sem fins lucrativos. Toda decisão técnica deve visar a redução de custos operacionais (rateio de infraestrutura).
+- **Sustentabilidade:** Priorizar métricas de consumo precisas para viabilizar a divisão justa dos custos do servidor entre as clínicas.
 
-## 2. Organização da Documentação (Princípio da Verdade Única)
-- `DOCS_BUSINESS.md`: **Regras de Negócio Narrativas.** Contém o "porquê" e a lógica dos processos. É a fonte primária de verdade.
-- `DOCS_API.md`: Requisitos técnicos, padrões de segurança (JWT, 2FA, Criptografia AES-256) e especificações de integração.
-- `DOCS_DB.md`: Modelagem de dados, dicionário e diagramas de persistência.
-- `agentes.md`: Este guia de conduta e fluxos de trabalho.
+## 2. Terminologia e Interface (Mandatório)
+- **Nomenclatura:** É expressamente proibido o uso do termo "Prontuário" na interface ou documentação de usuário.
+- **Termo Correto:** **Registro Clínico (Tela do Paciente)** ou **Histórico do Paciente**.
+- **Contexto:** O sistema deve parecer uma ferramenta de apoio ao cuidado, não apenas um repositório médico burocrático.
 
 ## 3. Padrões de Desenvolvimento e Governança
-- **Isolamento de Dados (Multi-tenancy):** É mandatório o uso de identificadores de clínica (`tenant_id`) em todas as transações. O vazamento de dados entre unidades é considerado uma falha crítica de segurança.
-- **Arquitetura de Auditoria Integral:** Nenhum dado sensível deve ser acessado ou alterado sem a geração de um log imutável contendo: Usuário, Timestamp, IP, Ação e Justificativa (quando aplicável).
-- **Persistência Jurídica (Soft Delete):** É proibida a exclusão física de registros. Deve-se utilizar a exclusão lógica para garantir a custódia dos dados por prazos legais (mínimo de 5 anos para prontuários).
+- **Multi-tenancy:** Uso obrigatório de `tenant_id` em todas as tabelas e queries. O vazamento de dados entre clínicas é uma falha crítica.
+- **Exclusão Lógica Permanente:** **Proibido o uso de `DELETE` físico.** Todos os registros devem usar flags de inatividade (`soft delete`) para preservar a auditoria e o histórico de rateio.
+- **Auditoria Integral:** Todo acesso ou tentativa de acesso a um **Registro Clínico (Tela do Paciente)** deve gerar um log imutável contendo: Usuário, Data/Hora, IP e Ação.
 
-## 4. Protocolos Éticos e de Segurança
-- **Custódia do Prontuário:** O agente deve garantir que o acesso ao prontuário seja exclusivo do profissional responsável, exceto nos casos previstos nos **Procedimentos de Contingência** do `DOCS_BUSINESS.md`.
-- **Validação de TCLE:** Funcionalidades críticas (compartilhamento/urgência) só devem ser implementadas mediante a verificação da existência do Termo de Consentimento assinado.
-- **Imutabilidade Documental:** Após o prazo de retificação de 24 horas, o prontuário deve ser selado. Alterações posteriores devem ser tratadas como novos registros vinculados, nunca substituindo o original.
+## 4. Protocolos Éticos de Segurança (RBAC)
+- **Sigilo Clínico:** O **Gestor da Clínica** e o **Atendente** jamais devem ter acesso ao conteúdo textual das evoluções clínicas.
+- **Monitoramento Quantitativo:** APIs para gestores devem retornar apenas metadados (ex: "Registro preenchido: Sim/Não", "Número de faltas", "Status financeiro"), nunca o conteúdo clínico.
+- **Clínica Escola:** O acesso acadêmico é bloqueado por padrão e só é liberado mediante a validação sistêmica do **Contrato de Uso Acadêmico** assinado pelo paciente.
+- **Estagiários:** Devem estar obrigatoriamente vinculados a um **Supervisor**, que detém a responsabilidade legal e acesso aos registros para orientação.
 
-## 5. Inteligência Artificial Responsável
-- **Filtro Ético:** Toda sugestão de marketing ou comunicação gerada por IA deve passar por um validador de conformidade com os códigos de ética profissional.
-- **Transparência Preditiva:** Alertas de evasão ou análises de humor devem ser apresentados como sugestões de apoio à decisão, nunca substituindo o julgamento clínico do profissional.
+## 5. Regras Clínicas Inegociáveis
+- **Triagem:** Campo obrigatório para histórico de **Surto Psicótico**.
+- **TCLE:** O upload do Termo de Consentimento é o gatilho para liberar qualquer registro de atendimento na **Tela do Paciente**.
+- **Imutabilidade:** Após 24 horas (janela de retificação), o registro clínico torna-se imutável. Alterações só via adendos vinculados.
 
-## 6. Fluxo de Trabalho do Agente
-1. **Pesquisa:** Validar se a funcionalidade solicitada está descrita no `DOCS_BUSINESS.md`.
-2. **Documentação:** Antes de codificar, atualizar o `DOCS_API.md` e `DOCS_DB.md` com o desenho técnico.
-3. **Implementação:** Seguir os padrões de Java 17+ e Spring Boot 3.
-4. **Auditoria:** Garantir que a nova funcionalidade gere os logs de auditoria correspondentes conforme a seção 3 deste guia.
+## 6. Organização da Verdade Única
+- `DOCS_BUSINESS.md`: O "Porquê" e as Regras de Negócio (Narrativo).
+- `DOCS_API.md`: O "Como" (Técnico e Segurança).
+- `DOCS_DB.md`: A "Estrutura" (Dados).
+- `agentes.md`: A "Conduta" e Padrões Éticos.
 
-## 7. Comunicação e Transparência
-- **Tom Profissional:** Evitar termos coloquiais na documentação técnica e no código.
-- **Justificativa de Ação:** O agente deve sempre explicar a lógica por trás de alterações estruturais, garantindo que elas não comprometam a segurança ou a independência das clínicas.
+**Nota:** Qualquer conflito entre os documentos deve ser resolvido priorizando o `DOCS_BUSINESS.md` para regras de negócio e o `agentes.md` para conduta ética.
