@@ -1,4 +1,4 @@
-package psicologia.clinica.exception;
+package psicologia.clinica.exception.api;
 
 import java.time.LocalDateTime;
 

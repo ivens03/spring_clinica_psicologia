@@ -5,6 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import psicologia.clinica.exception.api.ApiError;
+import psicologia.clinica.exception.exception.BusinessException;
+import psicologia.clinica.exception.exception.ResourceNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -61,7 +64,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneralException(Exception ex, HttpServletRequest request) {
-        String correlationId = UUID.randomUUID().toString(); // Em breve será substituído por um filtro de tracing
+        String correlationId = UUID.randomUUID().toString();
         
         ApiError error = new ApiError(
                 LocalDateTime.now(),
@@ -72,8 +75,6 @@ public class GlobalExceptionHandler {
                 correlationId
         );
 
-        // TODO: Logar o correlationId e o stacktrace aqui (Observabilidade)
-        
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }

@@ -3,10 +3,11 @@ package psicologia.clinica.clinica.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import psicologia.clinica.clinica.dtos.ClinicaRequestDTO;
 import psicologia.clinica.clinica.model.Clinica;
 import psicologia.clinica.clinica.repository.ClinicaRepository;
-import psicologia.clinica.exception.BusinessException;
-import psicologia.clinica.exception.ResourceNotFoundException;
+import psicologia.clinica.exception.exception.BusinessException;
+import psicologia.clinica.exception.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -17,11 +18,21 @@ public class ClinicaService {
     private final ClinicaRepository clinicaRepository;
 
     @Transactional
-    public Clinica salvar(Clinica clinica) {
-        validarIdentificador(clinica.getIdentificadorFiscal());
-        if (clinicaRepository.existsById(clinica.getIdentificadorFiscal())) {
+    public Clinica salvar(ClinicaRequestDTO request) {
+        validarIdentificador(request.identificadorFiscal());
+        
+        if (clinicaRepository.existsById(request.identificadorFiscal())) {
             throw new BusinessException("Clínica já cadastrada com este identificador fiscal.");
         }
+
+        Clinica clinica = Clinica.builder()
+                .identificadorFiscal(request.identificadorFiscal())
+                .nomeExibicao(request.nomeExibicao())
+                .tipoPessoa(request.tipoPessoa())
+                .registroConselhoClinica(request.registroConselhoClinica())
+                .tipoClinica(request.tipoClinica())
+                .build();
+
         return clinicaRepository.save(clinica);
     }
 
@@ -31,14 +42,13 @@ public class ClinicaService {
     }
 
     @Transactional
-    public Clinica atualizar(String id, Clinica dadosAtualizados) {
+    public Clinica atualizar(String id, ClinicaRequestDTO request) {
         Clinica clinicaExistente = buscarPorId(id);
         
-        clinicaExistente.setNomeExibicao(dadosAtualizados.getNomeExibicao());
-        clinicaExistente.setTipoPessoa(dadosAtualizados.getTipoPessoa());
-        clinicaExistente.setTipoClinica(dadosAtualizados.getTipoClinica());
-        clinicaExistente.setRegistroConselhoClinica(dadosAtualizados.getRegistroConselhoClinica());
-        clinicaExistente.setAtivo(dadosAtualizados.isAtivo());
+        clinicaExistente.setNomeExibicao(request.nomeExibicao());
+        clinicaExistente.setTipoPessoa(request.tipoPessoa());
+        clinicaExistente.setTipoClinica(request.tipoClinica());
+        clinicaExistente.setRegistroConselhoClinica(request.registroConselhoClinica());
 
         return clinicaRepository.save(clinicaExistente);
     }

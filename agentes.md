@@ -63,7 +63,19 @@ O projeto deve ser organizado por **Entidade (Package by Feature)** para garanti
 
 ## 9. Excelência Técnica e Padrões de Engenharia
 - **Clean Architecture:** Manter a independência entre a lógica de negócio (Entidades/Casos de Uso) e detalhes de infraestrutura (Frameworks, DB, APIs).
-- **Clean Code:** Funções pequenas, nomes altamente semânticos, ausência de comentários óbvios e tratamento de exceções específico.
+- **Clean Code:** Funções pequenas, nomes altamente semânticos (evitar `instancia1`, `variavelA`, etc.), ausência de comentários óbvios ou redundantes (comentar apenas o "porquê" de lógicas complexas e não o "o que" o código faz) e tratamento de exceções específico.
 - **Design Patterns:** Uso estratégico de padrões (Factory, Strategy, Observer, Template Method, etc.). O nome das classes deve refletir o padrão utilizado quando pertinente (ex: `RelatorioFinanceiroStrategy`).
 - **Java Conventions:** Aderência total às convenções de nomenclatura Java (CamelCase para variáveis/métodos, PascalCase para classes). Uso de **Records** para imutabilidade de DTOs.
+- **Nomenclatura de Testes:** É proibido o uso do prefixo "deve" ou números (ex: 404, 400). O nome do teste deve utilizar o **gerúndio** para descrever a ação em progresso e o resultado esperado (ex: `salvandoClinicaComSucesso`, `lancandoExcecaoQuandoCpfInvalido`, `retornandoErroRecursoNaoEncontradoParaClinicaInexistente`).
+- **Organização de Testes (Ação Única):** Cada classe de teste deve focar em uma única ação ou cenário principal, resultando em arquivos menores e mais semânticos (ex: `CriandoClinicaIT.java`, `BuscandoClinicaPorIdIT.java`, `AtualizandoClinicaIT.java`).
 - **S.O.L.I.D.:** Aplicação rigorosa dos cinco princípios, especialmente o Princípio da Responsabilidade Única (SRP) e da Inversão de Dependência (DIP).
+
+## 10. Padrões de Migração de Banco de Dados (Liquibase)
+- **Formato de Arquivo:** Priorizar o uso de arquivos `.sql` externos para as migrações, visando melhor legibilidade e compreensão do código SQL puro.
+- **Autoria:** Todo `changeset` ou arquivo de migração SQL deve obrigatoriamente utilizar o nome **ivens magno da costa lisboa** como autor (`author`).
+- **Organização:** Manter a estrutura de pastas clara, separando arquivos XML de inclusão (`changelog-master.xml`) das migrações SQL propriamente ditas.
+- **Limpeza de Esquema:** Em caso de detecção de colunas ou tabelas que não deveriam existir (gerando erros de integridade ou divergência com o model), o agente **não deve** criar migrações automáticas de exclusão (`DROP COLUMN`). O agente deve notificar o usuário para que a remoção seja feita manualmente, garantindo um histórico de migrações limpo e seguro para produção.
+
+## 11. Protocolo de Resiliência e Interação
+- **Limite de Erros:** Caso ocorra um erro técnico ou falha de teste por **3 vezes consecutivas** na mesma tarefa, o agente deve interromper a execução automaticamente.
+- **Notificação:** Ao atingir o limite, o agente deve avisar o usuário detalhando o que foi tentado, para que o ajuste seja feito manualmente ou a estratégia seja reavaliada.
