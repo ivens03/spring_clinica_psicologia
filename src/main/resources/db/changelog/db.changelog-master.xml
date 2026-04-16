@@ -6,5 +6,7 @@
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <include file="db/changelog/migrations/001_clinicas_setup_initial.sql"/>
+    <include file="db/changelog/migrations/002_create_table_usuarios.sql"/>
+    <include file="db/changelog/migrations/003_perfis_and_auditoria_setup.sql"/>
 
 </databaseChangeLog>

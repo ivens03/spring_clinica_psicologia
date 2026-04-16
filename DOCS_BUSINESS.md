@@ -53,9 +53,7 @@ Gerenciamento de salas físicas com bloqueio estrito para evitar conflitos.
 ## 10. Inteligência Artificial e Estratégia de Crescimento
 IA auxilia no marketing ético e alertas de evasão, respeitando o sigilo absoluto.
 
----
-
-## 👨‍⚕️ 13. Gestão Estratégica e Aba de Acompanhamento (Supervisão)
+## 11. Gestão Estratégica e Aba de Acompanhamento (Supervisão)
 O Gestor da Clínica monitora a qualidade da unidade através de indicadores quantitativos:
 
 - **Monitoramento de Fluxo:** Visualização de faltas, pacientes atendidos e pagamentos realizados.
@@ -63,8 +61,6 @@ O Gestor da Clínica monitora a qualidade da unidade através de indicadores qua
 - **Reputação Digital:** O sistema busca consolidar o máximo de dados possíveis de redes sociais e Google Reviews para gerar um índice de percepção da clínica.
 - **Currículo e Identificação:** Registro do currículo e número da carteira profissional (CRP/CRM) de todos os profissionais de saúde.
 
----
-
-## 🎓 12. Modelo de Clínica Escola
+## 12. Modelo de Clínica Escola
 - **Configuração:** O gestor escolhe entre Clínica Padrão ou Clínica Escola.
 - **Contrato Acadêmico:** Para uso de dados em estudo, é obrigatório o upload do contrato assinado pelo paciente e pelo gestor no sistema. Sem este documento, o acesso acadêmico é bloqueado.

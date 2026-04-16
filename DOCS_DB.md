@@ -7,6 +7,8 @@
 - **Audit Trails:** Implementação de tabelas de auditoria (Shadow Tables ou Tabelas de Log de Alteração) para registrar o estado anterior e posterior de cada registro sensível.
 - **Soft Delete (Não-Exclusão Física):** Uso de campos `deleted_at` ou flags de inatividade para preservar o histórico jurídico e de rateio.
 
+**Estado atual do código:** as migrations iniciais ainda usam `clinica_id` como vínculo de tenant em `usuarios` e `auditoria`. A padronização para `tenant_id` permanece pendente e deve ser tratada antes da expansão dos módulos clínicos.
+
 ## 2. Diagrama ER (Entidade-Relacionamento)
 *(Inserir diagrama aqui)*
 
@@ -35,12 +37,12 @@ Toda tabela deve possuir estes metadados para conformidade ética e técnica:
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | **cpf** | CHAR(11) (**PK**) | Identificador natural (11 dígitos) |
-| nome | VARCHAR(255) | Nome completo |
+| nome_completo | VARCHAR(255) | Nome completo |
 | data_nascimento | DATE | Data de nascimento |
 | email | VARCHAR(255) (Unique) | E-mail de acesso |
 | **senha** | VARCHAR(255) | Hash Argon2id |
 | **clinica_id** | VARCHAR(14) (FK) | Vínculo com `clinicas.clinicas` |
-| perfil_root | ENUM | GESTOR_SISTEMA, GESTOR_CLINICA, etc. |
+| perfil_root | ENUM | 'GESTOR_SISTEMA', 'GESTOR_CLINICA', 'FUNCIONARIO' |
 | ativo | BOOLEAN | Status do usuário |
 
 ### Schema `perfis` (Papéis e Especializações)
@@ -50,7 +52,7 @@ Toda tabela deve possuir estes metadados para conformidade ética e técnica:
 
 #### Tabela: `funcionarios`
 - `usuario_cpf`: CHAR(11) (PK, FK -> `usuarios.usuarios`)
-- `sub_perfil`: ENUM ('PROFISSIONAL_SAUDE', 'SECRETARIA', 'ATENDENTE')
+- `sub_perfil`: ENUM ('PROFISSIONAL_SAUDE', 'SECRETARIA', 'ATENDENTE', 'ESTAGIARIO')
 - `conselho_classe`: VARCHAR(50)
 - `registro_conselho`: VARCHAR(50)
 
@@ -88,3 +90,8 @@ Toda tabela deve possuir estes metadados para conformidade ética e técnica:
 O sistema utiliza **Liquibase** para controle de versão do banco.
 As migrations são organizadas em arquivos XML localizados em `src/main/resources/db/changelog/`.
 Cada migration deve garantir a criação do schema antes da criação da tabela.
+
+### Migrations atuais
+- `001_clinicas_setup_initial.sql`: cria schema/tabela de clínicas.
+- `002_create_table_usuarios.sql`: cria schema/tabela de usuários e índices principais.
+- `003_perfis_and_auditoria_setup.sql`: cria schemas/tabelas de perfis e auditoria, além de alinhar `usuarios.data_nascimento`.

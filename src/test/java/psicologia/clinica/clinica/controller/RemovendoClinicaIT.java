@@ -14,8 +14,7 @@ import psicologia.clinica.clinica.dtos.ClinicaRequestDTO;
 import psicologia.clinica.clinica.model.TipoClinica;
 import psicologia.clinica.clinica.model.TipoPessoa;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -31,14 +30,30 @@ class RemovendoClinicaIT {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-    @DisplayName("Removendo clínica com sucesso")
-    void removendoClinicaComSucesso() throws Exception {
-        ClinicaRequestDTO createDTO = new ClinicaRequestDTO(
-                "99988877766", "Clinica Deletar", TipoPessoa.FISICA, null, TipoClinica.EMPRESA);
-        mockMvc.perform(post("/clinicas").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(createDTO)));
+    @Autowired
+    private psicologia.clinica.clinica.repository.ClinicaRepository clinicaRepository;
 
-        mockMvc.perform(delete("/clinicas/99988877766"))
+    @Autowired
+    private jakarta.persistence.EntityManager entityManager;
+
+    @Test
+    @DisplayName("Removendo clínica com sucesso (Soft Delete)")
+    void removendoClinicaComSucesso() throws Exception {
+        String id = "99988877766";
+        ClinicaRequestDTO createDTO = new ClinicaRequestDTO(
+                id, "Clinica Deletar", TipoPessoa.FISICA, null, TipoClinica.EMPRESA);
+        mockMvc.perform(post("/clinicas").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(createDTO)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(delete("/clinicas/" + id))
                 .andExpect(status().isNoContent());
+
+        // Limpar o contexto de persistência para garantir que a próxima busca vá ao banco
+        entityManager.flush();
+        entityManager.clear();
+
+        // Verificar que não é mais encontrada via GET (por causa do @Where e busca no service)
+        mockMvc.perform(get("/clinicas/" + id))
+                .andExpect(status().isNotFound());
     }
 }

@@ -1,7 +1,7 @@
 # Documentação Técnica e de Arquitetura (DOCS_API)
 
 ## 1. Visão Geral da Solução
-Sistema de gestão para clínica de psicologia desenvolvido com **Java 17** e **Spring Boot 3.x**, focado em alta segurança e arquitetura **Multi-tenant**.
+Sistema de gestão para clínica de psicologia desenvolvido com **Java 21** e **Spring Boot 3.x**, focado em alta segurança e arquitetura **Multi-tenant**.
 
 ## 2. Padrões de Arquitetura
 - **Multi-tenancy:** Estratégia de **Discriminator Column** (`tenant_id`) em todas as tabelas.
@@ -45,7 +45,7 @@ Sistema de gestão para clínica de psicologia desenvolvido com **Java 17** e **
 ## 7. Padrões de Implementação Técnica
 - **Princípios S.O.L.I.D. e Clean Architecture.**
 - **Padrões de Projeto (Design Patterns):** Nomeação explícita do padrão no sufixo ou prefixo (ex: `PacienteBuilder`).
-- **Records do Java 17+:** Uso obrigatório para DTOs.
+- **Records do Java 21:** Uso obrigatório para DTOs.
 - **Validação:** Uso de `Spring Validation` (`@Valid`, `@NotNull`) nos endpoints.
 - **Tratamento de Exceções Global:** Concentrado em um `ControllerAdvice` para respostas de erro padronizadas.
 
@@ -66,3 +66,23 @@ Toda resposta de erro (4xx e 5xx) deve seguir obrigatoriamente esta estrutura:
 O sistema utiliza **Spring Profiles** para isolamento de configurações:
 - **Development (`dev`):** Banco de dados local `psic_dev`, logs em nível DEBUG, banner customizado.
 - **Production (`prod`):** Banco de dados de produção (configurado via variáveis de ambiente), logs em nível INFO, banner customizado, auditoria estrita.
+
+### 9.1 Carga de Usuários de Desenvolvimento
+No profile `dev`, o sistema pode criar automaticamente usuários de teste para facilitar validações locais.
+
+- A carga deve ser restrita ao profile `dev` por `@Profile("dev")`.
+- As senhas podem ficar hardcoded somente nessa classe de desenvolvimento.
+- Mesmo em desenvolvimento, as senhas devem ser persistidas usando o `PasswordEncoder` oficial da aplicação, atualmente Argon2id.
+- A carga deve ser idempotente: se o CPF já existir, o usuário não deve ser recriado.
+- Tokens hardcoded não devem ser usados enquanto o módulo real de autenticação JWT não existir, para evitar um contrato de segurança falso.
+
+Contas criadas no ambiente `dev`:
+
+| Papel | E-mail | CPF | Senha |
+|---|---|---|---|
+| Gestor Sistema | `dev.gestor.sistema@clinica.local` | `00000000001` | `Dev@123456` |
+| Gestor Clínica | `dev.gestor.clinica@clinica.local` | `00000000002` | `Dev@123456` |
+| Profissional Saúde | `dev.profissional@clinica.local` | `00000000003` | `Dev@123456` |
+| Atendente | `dev.atendente@clinica.local` | `00000000004` | `Dev@123456` |
+| Secretaria | `dev.secretaria@clinica.local` | `00000000005` | `Dev@123456` |
+| Estagiário | `dev.estagiario@clinica.local` | `00000000006` | `Dev@123456` |

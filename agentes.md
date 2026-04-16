@@ -38,15 +38,15 @@ Este documento é a autoridade máxima de conduta para o desenvolvimento do sist
 - `agentes.md`: A "Conduta" e Padrões Éticos.
 
 **Nota:** Qualquer conflito entre os documentos deve ser resolvido priorizando o `DOCS_BUSINESS.md` para regras de negócio e o `agentes.md` para conduta ética.
+
 ## 7. Protocolo de Desenvolvimento (Fluxo Mandatório)
 Toda nova funcionalidade ou correção deve seguir rigorosamente esta ordem:
 1.  **Documentação:** Atualização dos arquivos `DOCS_*.md` para refletir as mudanças ou novas regras.
 2.  **Versionamento da API:** A cada alteração de código que impacte a API, a versão no `OpenApiConfig` deve ser incrementada (ex: `.version("0.0.1")`).
 3.  **Testes (TDD):** Escrita de testes automatizados (Unitários, de Integração e Integrados) organizados em pastas e arquivos.
-...
-3.  **Validação de Testes:** Execução e garantia de sucesso total dos testes antes de iniciar a implementação final.
-4.  **Implementação:** Escrita do código seguindo a documentação e os testes.
-5.  **Feedback Técnico (Post-Mortem):** Relatório final com pontos de melhoria, lacunas identificadas e análise técnica profunda.
+4.  **Validação de Testes:** Execução e garantia de sucesso total dos testes antes de iniciar a implementação final.
+5.  **Implementação:** Escrita do código seguindo a documentação e os testes.
+6.  **Feedback Técnico (Post-Mortem):** Relatório final com pontos de melhoria, lacunas identificadas e análise técnica profunda.
 
 ## 8. Organização de Código
 O projeto deve ser organizado por **Entidade (Package by Feature)** para garantir coesão e isolamento:

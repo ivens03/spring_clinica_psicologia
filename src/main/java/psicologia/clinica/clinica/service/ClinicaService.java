@@ -55,10 +55,10 @@ public class ClinicaService {
 
     @Transactional
     public void deletar(String id) {
-        if (!clinicaRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Não é possível deletar: Clínica não encontrada com o identificador: " + id);
-        }
-        clinicaRepository.deleteById(id);
+        Clinica clinica = buscarPorId(id);
+        clinica.setAtivo(false);
+        clinica.setExcluidoEm(java.time.LocalDateTime.now());
+        clinicaRepository.save(clinica);
     }
 
     public Clinica buscarPorId(String id) {
