@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,7 +27,8 @@ class BuscandoClinicaIT {
     @Test
     @DisplayName("Retornando erro recurso não encontrado para clínica inexistente")
     void retornandoErroRecursoNaoEncontradoParaClinicaInexistente() throws Exception {
-        mockMvc.perform(get("/clinicas/00000000000"))
+        mockMvc.perform(get("/clinicas/00000000000")
+                        .with(user("gestor").roles("GESTOR_CLINICA")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Clínica não encontrada com o identificador: 00000000000"));
     }

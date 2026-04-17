@@ -15,6 +15,7 @@ import psicologia.clinica.clinica.model.TipoClinica;
 import psicologia.clinica.clinica.model.TipoPessoa;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -45,7 +46,8 @@ class RemovendoClinicaIT {
         mockMvc.perform(post("/clinicas").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(createDTO)))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(delete("/clinicas/" + id))
+        mockMvc.perform(delete("/clinicas/" + id)
+                        .with(user("gestor").roles("GESTOR_CLINICA")))
                 .andExpect(status().isNoContent());
 
         // Limpar o contexto de persistência para garantir que a próxima busca vá ao banco
@@ -53,7 +55,8 @@ class RemovendoClinicaIT {
         entityManager.clear();
 
         // Verificar que não é mais encontrada via GET (por causa do @Where e busca no service)
-        mockMvc.perform(get("/clinicas/" + id))
+        mockMvc.perform(get("/clinicas/" + id)
+                        .with(user("gestor").roles("GESTOR_CLINICA")))
                 .andExpect(status().isNotFound());
     }
 }

@@ -16,6 +16,7 @@ import psicologia.clinica.clinica.model.TipoPessoa;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,6 +44,7 @@ class AtualizandoClinicaIT {
                 "11122233344", "Clínica Atualizada", TipoPessoa.JURIDICA, "CRP-123", TipoClinica.EMPRESA_ESCOLAR);
 
         mockMvc.perform(put("/clinicas/11122233344")
+                .with(user("gestor").roles("GESTOR_CLINICA"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isOk())

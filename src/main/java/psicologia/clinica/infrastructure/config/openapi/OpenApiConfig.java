@@ -14,7 +14,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Clínica de Psicologia API")
-                        .version("0.0.4")
+                        .version("0.0.7")
                         .description("API para gestão de clínicas de psicologia - Foco em Segurança e Ética")
                         .contact(new Contact()
                                 .name("Suporte Técnico")

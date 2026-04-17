@@ -21,6 +21,7 @@ import psicologia.clinica.usuario.repository.UsuarioRepository;
 import java.time.LocalDate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -63,7 +64,8 @@ class RemovendoUsuarioIT {
                 .content(objectMapper.writeValueAsString(usuarioDTO)));
 
         // Remover
-        mockMvc.perform(delete("/usuarios/" + cpf))
+        mockMvc.perform(delete("/usuarios/" + cpf)
+                        .with(user("gestor").roles("GESTOR_CLINICA")))
                 .andExpect(status().isNoContent());
 
         // Limpar cache
@@ -71,7 +73,8 @@ class RemovendoUsuarioIT {
         entityManager.clear();
 
         // Verificar que não é encontrado via GET
-        mockMvc.perform(get("/usuarios/" + cpf))
+        mockMvc.perform(get("/usuarios/" + cpf)
+                        .with(user("gestor").roles("GESTOR_CLINICA")))
                 .andExpect(status().isNotFound());
 
         // Verificar soft delete no banco (usando findById - deve vir empty por causa do @Where)

@@ -6,16 +6,19 @@ import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import psicologia.clinica.acesso.security.JwtAuthenticationFilter;
+import psicologia.clinica.infrastructure.config.env.DotEnvReader;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -36,10 +39,40 @@ public class SecurityConfig {
     private static final String HMAC_ALGORITHM = "HmacSHA256";
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> response.sendError(401))
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/",
+                                "/login",
+                                "/login/2fa",
+                                "/acesso/entrar",
+                                "/acesso/confirmar-2fa",
+                                "/acesso/refresh",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/clinicas", "/usuarios").permitAll()
+                        .requestMatchers("/gestao/sistema").hasRole("GESTOR_SISTEMA")
+                        .requestMatchers("/gestao/clinica").hasRole("GESTOR_CLINICA")
+                        .requestMatchers("/atendimento/pacientes").hasRole("PROFISSIONAL_SAUDE")
+                        .requestMatchers("/supervisao/estagiario").hasRole("ESTAGIARIO")
+                        .requestMatchers("/atendimento/agenda").hasAnyRole("ATENDENTE", "SECRETARIA")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/usuarios/**").hasAnyRole("GESTOR_SISTEMA", "GESTOR_CLINICA")
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/usuarios/**").hasAnyRole("GESTOR_SISTEMA", "GESTOR_CLINICA")
+                        .requestMatchers("/clinicas/**").hasAnyRole("GESTOR_SISTEMA", "GESTOR_CLINICA")
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -56,32 +89,20 @@ public class SecurityConfig {
         return new PepperedPasswordEncoder(argon2id, resolvePasswordPepper(environment));
     }
 
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return username -> {
+            throw new UsernameNotFoundException("Autenticação deve usar o fluxo JWT da aplicação.");
+        };
+    }
+
     private String resolvePasswordPepper(Environment environment) {
         return Optional.ofNullable(environment.getProperty(PASSWORD_PEPPER_KEY))
                 .filter(this::hasText)
-                .or(this::readPasswordPepperFromDotEnv)
+                .or(() -> DotEnvReader.read(PASSWORD_PEPPER_KEY))
                 .orElseThrow(() -> new IllegalStateException(
                         "PASSWORD_PEPPER deve ser configurado como variável de ambiente ou no arquivo .env local."
                 ));
-    }
-
-    private Optional<String> readPasswordPepperFromDotEnv() {
-        Path dotEnvPath = Path.of(".env");
-        if (Files.notExists(dotEnvPath)) {
-            return Optional.empty();
-        }
-
-        try {
-            return Files.readAllLines(dotEnvPath, StandardCharsets.UTF_8)
-                    .stream()
-                    .map(String::trim)
-                    .filter(line -> line.startsWith(PASSWORD_PEPPER_KEY + "="))
-                    .map(line -> line.substring((PASSWORD_PEPPER_KEY + "=").length()).trim())
-                    .filter(this::hasText)
-                    .findFirst();
-        } catch (IOException exception) {
-            throw new IllegalStateException("Não foi possível ler o arquivo .env local.", exception);
-        }
     }
 
     private boolean hasText(String value) {

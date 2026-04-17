@@ -14,7 +14,9 @@ Sistema de gestão para clínica de psicologia desenvolvido com **Java 21** e **
 - O objetivo é manter a coesão do domínio e facilitar a manutenção.
 
 ## 3. Segurança e Privacidade (Prioridade Máxima)
-- **Autenticação:** JWT com Refresh Tokens e 2FA obrigatório para Gestores e Profissionais.
+- **Autenticação:** JWT HMAC-SHA256 com Refresh Tokens persistidos e rotacionados.
+- **2FA:** obrigatório para `GESTOR_SISTEMA`, `GESTOR_CLINICA` e `PROFISSIONAL_SAUDE`. Em `dev`, o código pode ser exposto para testes locais; em produção, a entrega do código deve ser integrada a canal externo seguro.
+- **RBAC:** aplicado via roles derivadas de `PerfilRoot` e `SubPerfil`.
 - **Hashing de Senhas:** **Argon2id** via `PasswordEncoder` oficial, com salt dinâmico por senha e custo computacional configurável.
 - **Pepper de Senhas:** O segredo global de pepper deve vir de `PASSWORD_PEPPER`. Em desenvolvimento local, pode ser carregado por arquivo `.env`; em produção, deve vir de variável de ambiente, secret manager ou mecanismo equivalente. O `.env` local não deve ser versionado.
 - **Minimização de PHI em URLs:** 
@@ -36,6 +38,33 @@ Sistema de gestão para clínica de psicologia desenvolvido com **Java 21** e **
 - **Não-Exclusão Física:** O sistema implementa exclusão lógica. Registros "apagados" são apenas marcados como inativos, preservando dados para auditoria.
 
 ## 6. Módulos da API
+
+### 6.0 Módulo de Acesso (`/acesso`)
+- `POST /acesso/entrar`: valida e-mail e senha enviados no corpo da requisição, registra auditoria de acesso quando o usuário é identificado e retorna o direcionamento inicial conforme perfil.
+- Se o perfil exigir 2FA, retorna `segundoFatorObrigatorio=true`, `desafioSegundoFatorId` e não emite tokens até a confirmação do código.
+- `POST /acesso/confirmar-2fa`: valida o desafio de segundo fator e emite `accessToken` JWT e `refreshToken`.
+- `POST /acesso/refresh`: valida o refresh token, revoga o token usado e emite um novo par de tokens.
+- A resposta não expõe CPF, senha ou hash de senha.
+- A tela única de login fica em `GET /login`; o formulário envia `POST /login` e redireciona para a rota inicial retornada pelo serviço de acesso.
+- Quando o perfil exige 2FA, `POST /login` redireciona para `GET /login/2fa`; `POST /login/2fa` confirma o código, grava cookies HttpOnly `ACCESS_TOKEN` e `REFRESH_TOKEN` e redireciona para o painel do perfil.
+- `GET /` redireciona para `GET /login`.
+- Direcionamentos atuais:
+    - `GESTOR_SISTEMA`: `PAINEL_GESTOR_SISTEMA`, rota `/gestao/sistema`.
+    - `GESTOR_CLINICA`: `PAINEL_GESTOR_CLINICA`, rota `/gestao/clinica`.
+    - `PROFISSIONAL_SAUDE`: `PAINEL_PROFISSIONAL_SAUDE`, rota `/atendimento/pacientes`.
+    - `ESTAGIARIO`: `PAINEL_ESTAGIARIO`, rota `/supervisao/estagiario`.
+    - `SECRETARIA` e `ATENDENTE`: `PAINEL_ATENDIMENTO`, rota `/atendimento/agenda`.
+- As telas de destino atuais são placeholders simples com `<h1>` contendo o tipo do usuário; já exigem JWT/cookie de acesso e role compatível.
+
+### 6.0.1 Regras RBAC iniciais
+- `/gestao/sistema`: exige `ROLE_GESTOR_SISTEMA`.
+- `/gestao/clinica`: exige `ROLE_GESTOR_CLINICA`.
+- `/atendimento/pacientes`: exige `ROLE_PROFISSIONAL_SAUDE`.
+- `/supervisao/estagiario`: exige `ROLE_ESTAGIARIO`.
+- `/atendimento/agenda`: exige `ROLE_ATENDENTE` ou `ROLE_SECRETARIA`.
+- `GET/DELETE /usuarios/**`: exige `ROLE_GESTOR_SISTEMA` ou `ROLE_GESTOR_CLINICA`.
+- `/clinicas/**`, exceto `POST /clinicas`: exige `ROLE_GESTOR_SISTEMA` ou `ROLE_GESTOR_CLINICA`.
+- `POST /clinicas` e `POST /usuarios` permanecem públicos temporariamente para bootstrap/testes até existir fluxo de provisionamento administrativo autenticado.
 
 ### 6.1 Módulo Clínico (`/records`, `/documents`)
 - Gerenciamento do **Registro Clínico (Tela do Paciente)**: evoluções, mídias e contratos acadêmicos.
@@ -72,10 +101,24 @@ O sistema utiliza **Spring Profiles** para isolamento de configurações:
 No profile `dev`, o sistema pode criar automaticamente usuários de teste para facilitar validações locais.
 
 - A carga deve ser restrita ao profile `dev` por `@Profile("dev")`.
-- As senhas podem ficar hardcoded somente nessa classe de desenvolvimento.
+- A senha e os e-mails podem ser configurados por variáveis de ambiente ou pelo arquivo `.env` local.
 - Mesmo em desenvolvimento, as senhas devem ser persistidas usando o `PasswordEncoder` oficial da aplicação, atualmente Argon2id com pepper.
-- A carga deve ser idempotente: se o CPF já existir, o usuário não deve ser recriado.
+- A carga deve ser idempotente: se o CPF já existir, o usuário não deve ser recriado; em `dev`, e-mail e senha podem ser sincronizados a partir das variáveis locais.
 - Tokens hardcoded não devem ser usados enquanto o módulo real de autenticação JWT não existir, para evitar um contrato de segurança falso.
+
+Variáveis reconhecidas em `dev`:
+
+| Variável | Uso | Padrão |
+|---|---|---|
+| `DEV_USER_PASSWORD` | Senha comum para os usuários dev | `Dev@123456` |
+| `DEV_GESTOR_SISTEMA_EMAIL` | E-mail do gestor do sistema | `dev.gestor.sistema@clinica.local` |
+| `DEV_GESTOR_CLINICA_EMAIL` | E-mail do gestor da clínica | `dev.gestor.clinica@clinica.local` |
+| `DEV_PROFISSIONAL_EMAIL` | E-mail do profissional de saúde | `dev.profissional@clinica.local` |
+| `DEV_ATENDENTE_EMAIL` | E-mail do atendente | `dev.atendente@clinica.local` |
+| `DEV_SECRETARIA_EMAIL` | E-mail da secretaria | `dev.secretaria@clinica.local` |
+| `DEV_ESTAGIARIO_EMAIL` | E-mail do estagiário | `dev.estagiario@clinica.local` |
+| `JWT_SECRET` | Segredo de assinatura do JWT | Sem padrão seguro; em dev pode reutilizar segredo local |
+| `DEV_2FA_CODE` | Código fixo de 2FA para automação em dev | Código aleatório quando ausente |
 
 Contas criadas no ambiente `dev`:
 

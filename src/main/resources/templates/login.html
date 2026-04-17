@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar na clínica</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #18211d;
+            background: #f4f7f1;
+        }
+
+        main {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: minmax(320px, 520px) 1fr;
+        }
+
+        .login-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 48px;
+            background: #ffffff;
+        }
+
+        .visual-panel {
+            min-height: 100vh;
+            background:
+                linear-gradient(rgba(18, 33, 29, 0.16), rgba(18, 33, 29, 0.16)),
+                url("https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1400&q=80") center/cover;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 2rem;
+            line-height: 1.15;
+        }
+
+        p {
+            margin: 0 0 28px;
+            line-height: 1.55;
+            color: #53615b;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        input {
+            width: 100%;
+            min-height: 48px;
+            margin-bottom: 18px;
+            padding: 12px;
+            border: 1px solid #b7c2ba;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        button {
+            width: 100%;
+            min-height: 48px;
+            border: 0;
+            border-radius: 8px;
+            background: #1f6f5b;
+            color: #ffffff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .erro {
+            margin-bottom: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #ffe8e5;
+            color: #8d271c;
+        }
+
+        @media (max-width: 760px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+
+            .login-panel {
+                min-height: 68vh;
+                padding: 28px;
+            }
+
+            .visual-panel {
+                min-height: 32vh;
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <section class="login-panel">
+        <h1>Entrar na clínica</h1>
+        <p>Atendimento com sigilo, clareza e cuidado.</p>
+
+        <div class="erro" th:if="${param.erro}">E-mail ou senha inválidos.</div>
+
+        <form method="post" action="/login">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email" autocomplete="username" required>
+
+            <label for="senha">Senha</label>
+            <input id="senha" name="senha" type="password" autocomplete="current-password" required>
+
+            <button type="submit">Entrar</button>
+        </form>
+    </section>
+    <section class="visual-panel" aria-label="Atendimento com sigilo"></section>
+</main>
+</body>
+</html>

@@ -5,6 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import psicologia.clinica.acesso.exception.CredenciaisInvalidasException;
+import psicologia.clinica.acesso.exception.RefreshTokenInvalidoException;
+import psicologia.clinica.acesso.exception.SegundoFatorInvalidoException;
 import psicologia.clinica.exception.api.ApiError;
 import psicologia.clinica.exception.exception.BusinessException;
 import psicologia.clinica.exception.exception.ResourceNotFoundException;
@@ -14,6 +17,34 @@ import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<ApiError> handleCredenciaisInvalidasException(CredenciaisInvalidasException ex, HttpServletRequest request) {
+        return unauthorized(ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(SegundoFatorInvalidoException.class)
+    public ResponseEntity<ApiError> handleSegundoFatorInvalidoException(SegundoFatorInvalidoException ex, HttpServletRequest request) {
+        return unauthorized(ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(RefreshTokenInvalidoException.class)
+    public ResponseEntity<ApiError> handleRefreshTokenInvalidoException(RefreshTokenInvalidoException ex, HttpServletRequest request) {
+        return unauthorized(ex.getMessage(), request);
+    }
+
+    private ResponseEntity<ApiError> unauthorized(String message, HttpServletRequest request) {
+        String correlationId = UUID.randomUUID().toString();
+        ApiError error = new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+                message,
+                request.getRequestURI(),
+                correlationId
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
 
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidationException(org.springframework.web.bind.MethodArgumentNotValidException ex, HttpServletRequest request) {

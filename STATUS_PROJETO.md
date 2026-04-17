@@ -1,6 +1,6 @@
 # Status do Projeto - Clinica de Psicologia
 
-Atualizado em: 2026-04-16
+Atualizado em: 2026-04-17
 
 Este documento funciona como o quadro de acompanhamento do projeto. Ele deve ser atualizado sempre que uma tarefa mudar de estado, um bloqueio for resolvido ou um novo modulo for planejado.
 
@@ -13,9 +13,9 @@ Este documento funciona como o quadro de acompanhamento do projeto. Ele deve ser
 
 ## Resumo Executivo
 
-Status atual: **base executavel restaurada, com pendencias de seguranca e arquitetura**.
+Status atual: **base executavel restaurada, com JWT, refresh token, 2FA inicial e RBAC aplicado parcialmente**.
 
-O projeto possui a base inicial de Spring Boot, modulo de clinicas, inicio do modulo de usuarios, auditoria modelada parcialmente, OpenAPI configurado e migrations iniciais. A compilacao foi restaurada, a migration `003_perfis_and_auditoria_setup.sql` foi criada e os testes executados passaram.
+O projeto possui a base inicial de Spring Boot, modulo de clinicas, inicio do modulo de usuarios, modulo de acesso com tela unica de login, JWT, refresh token rotacionado, segundo fator obrigatório para gestores/profissionais, RBAC inicial, auditoria modelada parcialmente, OpenAPI configurado e migrations iniciais. A compilacao foi restaurada, as migrations ate `004_autenticacao_jwt_refresh_2fa.sql` foram aplicadas e os testes executados passaram.
 
 Validacao executada:
 
@@ -40,12 +40,13 @@ Validacao executada:
 | Documentacao base | [x] | `agentes.md`, `DOCS_BUSINESS.md`, `DOCS_API.md`, `DOCS_DB.md` | Numeracao do `DOCS_BUSINESS.md` esta fora de ordem em alguns topicos |
 | Build Maven | [x] | `pom.xml`, Maven Wrapper, Java 21 e Spring Boot 3.5.11 | Sem lacuna documental conhecida |
 | Modulo Clinica | [~] | Entity, DTOs, repository, service, controller, testes unitarios e integracao | Sem `tenant_id`; usa identificador fiscal como chave natural; sem auditoria de alteracoes |
-| Modulo Usuario | [~] | Entity, DTOs, repository, service, controller, testes iniciais | Sem update; sem RBAC real; sem 2FA; sem JWT |
+| Modulo Usuario | [~] | Entity, DTOs, repository, service, controller, testes iniciais; GET/DELETE protegidos por RBAC inicial | Sem update; criacao ainda publica para bootstrap |
+| Modulo Acesso | [~] | `POST /acesso/entrar`, `POST /acesso/confirmar-2fa`, `POST /acesso/refresh`, `GET/POST /login` e `GET/POST /login/2fa`; emite JWT, refresh token e registra auditoria | Entrega real do codigo 2FA ainda nao integrada a e-mail/SMS/app autenticador |
 | Perfis | [~] | Entidades `Gestor`, `Funcionario`, `Estagiario`, enums e migration inicial | Regras de supervisor e perfil ainda incompletas |
 | Auditoria | [~] | Entidades `Acesso`, `Alteracao`, repositories, interface `Auditable` e migration inicial | Logs nao sao globais; falta IP real; falta imutabilidade forte |
-| OpenAPI | [~] | Configuracao com versao `0.0.4` | Falta documentacao detalhada dos endpoints e seguranca no contrato |
-| Seguranca | [~] | `PasswordEncoder` Argon2id oficial com pepper via `PASSWORD_PEPPER`; `.env` local ignorado pelo Git | `permitAll` para todas as rotas; sem JWT; sem refresh token; sem 2FA; sem RBAC; sem filtros |
-| Seed de desenvolvimento | [x] | Classe `DevUsuariosSeeder` restrita ao profile `dev`, com usuários por papel e senha Argon2id | Ainda depende do banco `psic_dev` até existir profile `test` isolado |
+| OpenAPI | [~] | Configuracao com versao `0.0.7` | Falta detalhar schemas de seguranca no Swagger |
+| Seguranca | [~] | `PasswordEncoder` Argon2id com pepper via `PASSWORD_PEPPER`; JWT via `JWT_SECRET`; refresh token persistido; 2FA inicial; RBAC por roles | `POST /clinicas` e `POST /usuarios` ainda publicos para bootstrap/testes; sem canal real de entrega 2FA |
+| Seed de desenvolvimento | [x] | Classe `DevUsuariosSeeder` restrita ao profile `dev`, com usuários por papel, e-mails/senha via ambiente ou `.env`, e senha Argon2id | Ainda depende do banco `psic_dev` até existir profile `test` isolado |
 | Banco/Liquibase | [~] | Schemas/tabelas iniciais para clinicas, usuarios, perfis e auditoria | Sem `tenant_id` padrao |
 | Tratamento de erros | [~] | `ApiError`, `GlobalExceptionHandler`, excecoes comuns e excecoes de usuario | CorrelationId e gerado no handler, mas nao propagado por request/log |
 | Testes | [~] | Testes para clinicas, usuarios e OpenAPI passando | Integracao depende de PostgreSQL dev |
@@ -59,6 +60,18 @@ Validacao executada:
 | `GET /clinicas/{id}` | [~] | Busca por identificador fiscal |
 | `PUT /clinicas/{id}` | [~] | Atualiza dados basicos |
 | `DELETE /clinicas/{id}` | [~] | Endpoint HTTP DELETE, mas service executa soft delete |
+| `POST /acesso/entrar` | [~] | Valida credenciais por e-mail/senha; emite tokens para perfis sem 2FA ou abre desafio para perfis obrigatorios |
+| `POST /acesso/confirmar-2fa` | [~] | Confirma desafio de segundo fator e emite access/refresh token |
+| `POST /acesso/refresh` | [~] | Rotaciona refresh token e emite novo access token |
+| `GET /login` | [~] | Exibe a tela unica de login |
+| `POST /login` | [~] | Valida credenciais e redireciona para 2FA quando obrigatorio |
+| `GET /login/2fa` | [~] | Exibe formulario de segundo fator |
+| `POST /login/2fa` | [~] | Confirma segundo fator, grava cookies HttpOnly e redireciona por perfil |
+| `GET /gestao/sistema` | [~] | Placeholder com `<h1>GESTOR_SISTEMA</h1>` |
+| `GET /gestao/clinica` | [~] | Placeholder com `<h1>GESTOR_CLINICA</h1>` |
+| `GET /atendimento/pacientes` | [~] | Placeholder com `<h1>PROFISSIONAL_SAUDE</h1>` |
+| `GET /supervisao/estagiario` | [~] | Placeholder com `<h1>ESTAGIARIO</h1>` |
+| `GET /atendimento/agenda` | [~] | Placeholder com `<h1>ATENDIMENTO</h1>` |
 | `POST /usuarios` | [~] | Implementado parcialmente; cria usuario, perfis e log inicial de auditoria |
 | `GET /usuarios` | [~] | Implementado parcialmente |
 | `GET /usuarios/{cpf}` | [!] | Usa CPF na URL, o que conflita com a diretriz de nao expor dados sensiveis em parametros/rotas |
@@ -100,14 +113,17 @@ Validacao executada:
 
 | Status | Tarefa | Criterio de aceite |
 |---|---|---|
-| [ ] | Implementar autenticacao JWT | Login emite access token e refresh token |
-| [ ] | Implementar refresh token | Renovacao controlada e revogavel |
-| [ ] | Remover `permitAll` global | Endpoints exigem autenticacao conforme perfil |
-| [ ] | Implementar RBAC inicial | Gestor, profissional, atendente, estagiario e supervisor com permissoes separadas |
-| [ ] | Implementar 2FA para gestores e profissionais | Fluxo de autenticacao exige segundo fator para perfis obrigatorios |
+| [x] | Implementar autenticacao JWT | Login/2FA emite access token e refresh token |
+| [x] | Implementar refresh token | Renovacao controlada, persistida e rotacionada |
+| [~] | Remover `permitAll` global | Rotas principais exigem autenticacao conforme perfil; bootstrap de clinica/usuario ainda publico |
+| [~] | Implementar RBAC inicial | Gestor, profissional, atendente, estagiario e secretaria com permissoes separadas em rotas iniciais |
+| [~] | Implementar 2FA para gestores e profissionais | Fluxo exige segundo fator; falta canal real de entrega em producao |
 | [ ] | Evitar CPF em rotas publicas | Usar identificadores opacos quando houver exposicao por URL |
 | [x] | Criar usuários padrão de desenvolvimento | Usuários dev criados somente no profile `dev`, com senha codificada |
 | [x] | Aplicar pepper nas senhas | `PasswordEncoder` aplica pepper via `PASSWORD_PEPPER` antes do Argon2id |
+| [x] | Criar entrada inicial no sistema | Endpoint retorna direcionamento por perfil sem expor CPF, senha ou hash |
+| [x] | Criar tela unica de login inicial | `GET /login` exibe formulario e `POST /login` redireciona por perfil |
+| [x] | Criar tabelas de autenticacao | Refresh tokens e desafios de segundo fator persistidos via Liquibase |
 
 ### P1 - Banco, Multi-tenancy e Auditoria
 
@@ -177,7 +193,7 @@ Validacao executada:
 | Risco | Impacto | Mitigacao |
 |---|---|---|
 | Rotas com CPF | Viola regra de nao expor dado sensivel em URL | Adotar UUID opaco ou rotas por corpo de requisicao quando adequado |
-| `permitAll` global | Exposicao total da API | Implementar security filter chain real |
+| Bootstrap publico | `POST /clinicas` e `POST /usuarios` ainda publicos | Criar provisionamento administrativo autenticado e fechar essas rotas |
 | `tenant_id` nao padronizado | Risco de isolamento fraco entre clinicas | Consolidar estrategia multi-tenant antes de expandir schema |
 | Testes em profile dev | Suite fragil e dependente de ambiente local | Profile `test` isolado |
 
@@ -200,12 +216,18 @@ Validacao executada:
 | 2026-04-15 | `./mvnw test` | Passou | 10 testes executados, 0 falhas, 0 erros apos seed dev |
 | 2026-04-15 | `./mvnw -Dtest='*IT' test` | Passou | 9 testes de integracao executados, 0 falhas, 0 erros apos seed dev |
 | 2026-04-16 | Revisao dos Markdown | Passou | `agentes.md`, `DOCS_BUSINESS.md`, `DOCS_API.md`, `DOCS_DB.md` e `STATUS_PROJETO.md` alinhados ao estado atual |
+| 2026-04-17 | `./mvnw test` | Passou | 12 testes executados, 0 falhas, 0 erros apos acesso inicial |
+| 2026-04-17 | `./mvnw -Dtest='*IT' test` | Passou | 11 testes de integracao executados, 0 falhas, 0 erros apos acesso inicial |
+| 2026-04-17 | `./mvnw test` | Passou | 12 testes executados, 0 falhas, 0 erros apos tela unica de login |
+| 2026-04-17 | `./mvnw -Dtest='*IT' test` | Passou | 15 testes de integracao executados, 0 falhas, 0 erros apos tela unica de login |
+| 2026-04-17 | `./mvnw test` | Passou | 12 testes executados, 0 falhas, 0 erros apos JWT, refresh token, 2FA e RBAC inicial |
+| 2026-04-17 | `./mvnw -Dtest='*IT' test` | Passou | 18 testes de integracao executados, 0 falhas, 0 erros apos JWT, refresh token, 2FA e RBAC inicial |
 
 ## Proxima Sprint Recomendada
 
 1. Criar profile de teste isolado.
 2. Remover CPF das rotas de usuario antes de consolidar a API.
-3. Substituir `permitAll` por autenticacao real inicial.
+3. Fechar bootstrap autenticado para `POST /clinicas` e `POST /usuarios`.
 4. Decidir e aplicar padrao de multi-tenancy (`tenant_id`).
-5. Implementar JWT, refresh token e RBAC inicial.
+5. Integrar entrega real de 2FA.
 6. Evoluir auditoria para capturar IP real e eventos globais.

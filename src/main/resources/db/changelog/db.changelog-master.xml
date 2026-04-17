@@ -8,5 +8,6 @@
     <include file="db/changelog/migrations/001_clinicas_setup_initial.sql"/>
     <include file="db/changelog/migrations/002_create_table_usuarios.sql"/>
     <include file="db/changelog/migrations/003_perfis_and_auditoria_setup.sql"/>
+    <include file="db/changelog/migrations/004_autenticacao_jwt_refresh_2fa.sql"/>
 
 </databaseChangeLog>
