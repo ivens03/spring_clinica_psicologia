@@ -43,8 +43,8 @@ Validacao executada:
 | Modulo Usuario | [~] | Entity, DTOs, repository, service, controller, testes iniciais | Sem update; sem RBAC real; sem 2FA; sem JWT |
 | Perfis | [~] | Entidades `Gestor`, `Funcionario`, `Estagiario`, enums e migration inicial | Regras de supervisor e perfil ainda incompletas |
 | Auditoria | [~] | Entidades `Acesso`, `Alteracao`, repositories, interface `Auditable` e migration inicial | Logs nao sao globais; falta IP real; falta imutabilidade forte |
-| OpenAPI | [~] | Configuracao com versao `0.0.3` | Falta documentacao detalhada dos endpoints e seguranca no contrato |
-| Seguranca | [~] | `PasswordEncoder` Argon2id manual | `permitAll` para todas as rotas; sem JWT; sem refresh token; sem 2FA; sem RBAC; sem filtros |
+| OpenAPI | [~] | Configuracao com versao `0.0.4` | Falta documentacao detalhada dos endpoints e seguranca no contrato |
+| Seguranca | [~] | `PasswordEncoder` Argon2id oficial com pepper via `PASSWORD_PEPPER`; `.env` local ignorado pelo Git | `permitAll` para todas as rotas; sem JWT; sem refresh token; sem 2FA; sem RBAC; sem filtros |
 | Seed de desenvolvimento | [x] | Classe `DevUsuariosSeeder` restrita ao profile `dev`, com usuários por papel e senha Argon2id | Ainda depende do banco `psic_dev` até existir profile `test` isolado |
 | Banco/Liquibase | [~] | Schemas/tabelas iniciais para clinicas, usuarios, perfis e auditoria | Sem `tenant_id` padrao |
 | Tratamento de erros | [~] | `ApiError`, `GlobalExceptionHandler`, excecoes comuns e excecoes de usuario | CorrelationId e gerado no handler, mas nao propagado por request/log |
@@ -75,7 +75,7 @@ Validacao executada:
 | Auditoria integral | [~] | Estrutura parcial existe; ainda nao cobre todo acesso e alteracao sensivel |
 | Multi-tenancy com `tenant_id` | [!] | Implementacao usa `clinica_id` em usuarios/auditoria e nao tem `tenant_id` em todas as tabelas |
 | Sigilo clinico e RBAC | [!] | Ainda nao ha RBAC aplicado; todas as rotas estao liberadas |
-| Argon2id | [~] | Encoder existe; falta validacao de robustez, testes dedicados e integracao com autenticacao real |
+| Argon2id | [~] | Encoder oficial com pepper e testes dedicados | Falta integracao com autenticacao real |
 | PHI fora de URL/query params | [!] | `GET/DELETE /usuarios/{cpf}` expoe CPF em rota |
 | TCLE obrigatorio | [ ] | Modulo ainda nao implementado |
 | Triagem com campo de surto psicotico | [ ] | Modulo ainda nao implementado |
@@ -107,6 +107,7 @@ Validacao executada:
 | [ ] | Implementar 2FA para gestores e profissionais | Fluxo de autenticacao exige segundo fator para perfis obrigatorios |
 | [ ] | Evitar CPF em rotas publicas | Usar identificadores opacos quando houver exposicao por URL |
 | [x] | Criar usuários padrão de desenvolvimento | Usuários dev criados somente no profile `dev`, com senha codificada |
+| [x] | Aplicar pepper nas senhas | `PasswordEncoder` aplica pepper via `PASSWORD_PEPPER` antes do Argon2id |
 
 ### P1 - Banco, Multi-tenancy e Auditoria
 

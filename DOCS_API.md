@@ -15,7 +15,8 @@ Sistema de gestão para clínica de psicologia desenvolvido com **Java 21** e **
 
 ## 3. Segurança e Privacidade (Prioridade Máxima)
 - **Autenticação:** JWT com Refresh Tokens e 2FA obrigatório para Gestores e Profissionais.
-- **Hashing de Senhas:** **Argon2id** (com salt dinâmico e custo computacional configurável).
+- **Hashing de Senhas:** **Argon2id** via `PasswordEncoder` oficial, com salt dinâmico por senha e custo computacional configurável.
+- **Pepper de Senhas:** O segredo global de pepper deve vir de `PASSWORD_PEPPER`. Em desenvolvimento local, pode ser carregado por arquivo `.env`; em produção, deve vir de variável de ambiente, secret manager ou mecanismo equivalente. O `.env` local não deve ser versionado.
 - **Minimização de PHI em URLs:** 
     - PHI (Protected Health Information) nunca deve transitar via `Query Parameters`.
     - Uso de IDs opacos (UUIDs) para exposição em rotas REST, mitigando ataques de enumeração.
@@ -72,7 +73,7 @@ No profile `dev`, o sistema pode criar automaticamente usuários de teste para f
 
 - A carga deve ser restrita ao profile `dev` por `@Profile("dev")`.
 - As senhas podem ficar hardcoded somente nessa classe de desenvolvimento.
-- Mesmo em desenvolvimento, as senhas devem ser persistidas usando o `PasswordEncoder` oficial da aplicação, atualmente Argon2id.
+- Mesmo em desenvolvimento, as senhas devem ser persistidas usando o `PasswordEncoder` oficial da aplicação, atualmente Argon2id com pepper.
 - A carga deve ser idempotente: se o CPF já existir, o usuário não deve ser recriado.
 - Tokens hardcoded não devem ser usados enquanto o módulo real de autenticação JWT não existir, para evitar um contrato de segurança falso.
 

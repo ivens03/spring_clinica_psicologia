@@ -1,21 +1,39 @@
 package psicologia.clinica.infrastructure.config.security;
 
-import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
-import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-import java.security.SecureRandom;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.Objects;
+import java.util.Optional;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final int ARGON2_SALT_LENGTH = 16;
+    private static final int ARGON2_HASH_LENGTH = 32;
+    private static final int ARGON2_PARALLELISM = 1;
+    private static final int ARGON2_MEMORY_KB = 65_536;
+    private static final int ARGON2_ITERATIONS = 3;
+
+    private static final String PASSWORD_PEPPER_KEY = "PASSWORD_PEPPER";
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -26,84 +44,81 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new Argon2idPasswordEncoder();
+    public PasswordEncoder passwordEncoder(Environment environment) {
+        PasswordEncoder argon2id = new Argon2PasswordEncoder(
+                ARGON2_SALT_LENGTH,
+                ARGON2_HASH_LENGTH,
+                ARGON2_PARALLELISM,
+                ARGON2_MEMORY_KB,
+                ARGON2_ITERATIONS
+        );
+
+        return new PepperedPasswordEncoder(argon2id, resolvePasswordPepper(environment));
     }
 
-    // Implementação manual simples do Argon2id usando Bouncy Castle
-    // Em um cenário real, poderíamos usar bibliotecas que facilitam isso,
-    // mas vamos seguir o que está disponível.
-    public static class Argon2idPasswordEncoder implements PasswordEncoder {
+    private String resolvePasswordPepper(Environment environment) {
+        return Optional.ofNullable(environment.getProperty(PASSWORD_PEPPER_KEY))
+                .filter(this::hasText)
+                .or(this::readPasswordPepperFromDotEnv)
+                .orElseThrow(() -> new IllegalStateException(
+                        "PASSWORD_PEPPER deve ser configurado como variável de ambiente ou no arquivo .env local."
+                ));
+    }
 
-        private static final int SALT_LENGTH = 16;
-        private static final int HASH_LENGTH = 32;
-        private static final int ITERATIONS = 3;
-        private static final int MEMORY = 65536;
-        private static final int PARALLELISM = 4;
+    private Optional<String> readPasswordPepperFromDotEnv() {
+        Path dotEnvPath = Path.of(".env");
+        if (Files.notExists(dotEnvPath)) {
+            return Optional.empty();
+        }
+
+        try {
+            return Files.readAllLines(dotEnvPath, StandardCharsets.UTF_8)
+                    .stream()
+                    .map(String::trim)
+                    .filter(line -> line.startsWith(PASSWORD_PEPPER_KEY + "="))
+                    .map(line -> line.substring((PASSWORD_PEPPER_KEY + "=").length()).trim())
+                    .filter(this::hasText)
+                    .findFirst();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Não foi possível ler o arquivo .env local.", exception);
+        }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    static class PepperedPasswordEncoder implements PasswordEncoder {
+
+        private final PasswordEncoder delegate;
+        private final byte[] pepperBytes;
+
+        PepperedPasswordEncoder(PasswordEncoder delegate, String pepper) {
+            this.delegate = Objects.requireNonNull(delegate);
+            this.pepperBytes = Objects.requireNonNull(pepper).getBytes(StandardCharsets.UTF_8);
+        }
 
         @Override
         public String encode(CharSequence rawPassword) {
-            byte[] salt = new byte[SALT_LENGTH];
-            new SecureRandom().nextBytes(salt);
-
-            byte[] hash = generateHash(rawPassword, salt);
-
-            return String.format("$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s",
-                    MEMORY, ITERATIONS, PARALLELISM,
-                    Base64.getEncoder().withoutPadding().encodeToString(salt),
-                    Base64.getEncoder().withoutPadding().encodeToString(hash));
+            return delegate.encode(applyPepper(rawPassword));
         }
 
         @Override
         public boolean matches(CharSequence rawPassword, String encodedPassword) {
-            if (encodedPassword == null || !encodedPassword.startsWith("$argon2id$")) {
-                return false;
-            }
-
-            String[] parts = encodedPassword.split("\\$");
-            if (parts.length != 6) {
-                return false;
-            }
-
-            // m=65536,t=3,p=4
-            String[] params = parts[3].split(",");
-            int m = Integer.parseInt(params[0].split("=")[1]);
-            int t = Integer.parseInt(params[1].split("=")[1]);
-            int p = Integer.parseInt(params[2].split("=")[1]);
-
-            byte[] salt = Base64.getDecoder().decode(parts[4]);
-            byte[] hash = Base64.getDecoder().decode(parts[5]);
-
-            byte[] testHash = generateHash(rawPassword, salt, m, t, p);
-
-            if (hash.length != testHash.length) return false;
-            int result = 0;
-            for (int i = 0; i < hash.length; i++) {
-                result |= hash[i] ^ testHash[i];
-            }
-            return result == 0;
+            return delegate.matches(applyPepper(rawPassword), encodedPassword);
         }
 
-        private byte[] generateHash(CharSequence password, byte[] salt) {
-            return generateHash(password, salt, MEMORY, ITERATIONS, PARALLELISM);
-        }
+        private String applyPepper(CharSequence rawPassword) {
+            Objects.requireNonNull(rawPassword, "A senha não pode ser nula.");
 
-        private byte[] generateHash(CharSequence password, byte[] salt, int m, int t, int p) {
-            Argon2Parameters params = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
-                    .withVersion(Argon2Parameters.ARGON2_VERSION_13)
-                    .withIterations(t)
-                    .withMemoryAsKB(m)
-                    .withParallelism(p)
-                    .withSalt(salt)
-                    .build();
-
-            Argon2BytesGenerator generator = new Argon2BytesGenerator();
-            generator.init(params);
-
-            byte[] hash = new byte[HASH_LENGTH];
-            generator.generateBytes(password.toString().toCharArray(), hash);
-
-            return hash;
+            try {
+                Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+                mac.init(new SecretKeySpec(pepperBytes, HMAC_ALGORITHM));
+                byte[] digest = mac.doFinal(rawPassword.toString().getBytes(StandardCharsets.UTF_8));
+                return Base64.getEncoder().encodeToString(digest);
+            } catch (NoSuchAlgorithmException | InvalidKeyException exception) {
+                throw new IllegalStateException("Não foi possível aplicar o pepper da senha.", exception);
+            }
         }
     }
 }
